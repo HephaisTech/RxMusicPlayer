@@ -1,0 +1,101 @@
+
+const bcrypt = require("bcrypt");
+const Jwt = require("jsonwebtoken");
+const User = require("../model/user");
+
+exports.register = async (req, res, next) => {
+    try {
+        let photos = '';
+        if (req.files) {
+            if (req.files.length > 0) {
+                photos = `${req.protocol}://${req.get('host')}/images/${element.filename}`;
+                req.body.photo = photos;
+            }
+        }
+
+
+
+        if (req.body.password.length < 8) {
+            return res.status(401).json({ message: "password too wike !" });
+        }
+        const salt = bcrypt.genSaltSync(7);
+        const hash = bcrypt.hashSync(req.body.password, salt);
+        //
+        const newUser = new User({
+            username: req.body.username,
+            email: req.body.email,
+            password: hash,
+            photos: photos
+        });
+        // await newUser.save();
+        // return res.status(201).json({ resulte: newUser });
+        await newUser.save().then((user) => {
+            return res.status(201).json({
+                result: true,
+                message: 'successfully  registered !',
+                data: { id: user._id, email: user.email, activated: user.activated }
+            })
+        }).catch((err) => {
+            return res.status(403).json({ result: false, message: 'faild!', error: err.message, payload: req.body })
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+exports.login = async (req, res, next) => {
+    try {
+        //search user
+        const user = await User.findOne({ email: req.body.email })
+        // if user is not found return error
+        if (!user) return res.status(401).json({ message: "email or password incorrect !" });
+        // if user , check pwd
+        const valid = await bcrypt.compare(req.body.password, user.password);
+        // if pwd incorrect return error
+        if (!valid) return res.status(401).json({ message: "email or password incorrect !" });
+
+        // return user
+        const token = Jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWTKEY, { expiresIn: "24h" });
+        const { password, isAdmin, ...newUser } = user._doc;
+        res.setHeader('content-type', 'text/plain');
+        res.cookie("RxMusic", token, { httpOnly: true, });
+        res.status(200).json({
+            result: true,
+            message: `welcome ${newUser.email} !`,
+            data: newUser,
+            url: "/pages/home/index.html"
+        })
+
+    } catch (error) {
+        next(error);
+    }
+
+}
+
+exports.registerAdmin = async (req, res, next) => {
+    try {
+        const salt = bcrypt.genSaltSync(7);
+        const hash = bcrypt.hashSync(req.body.password, salt);
+
+        //
+        const newUser = new User({
+            username: req.body.username,
+            email: req.body.email,
+            password: hash,
+            isAdmin: true,
+            role: 'sysAdmin',
+            activated: true,
+            // photos: photos
+        });
+        await newUser.save().then((user) => {
+            return res.status(201).json({
+                result: true,
+                message: 'successfully  registered !',
+                data: { id: user._id, email: user.email }
+            })
+        }).catch((err) => {
+            return res.status(403).json({ result: false, message: 'faild!', error: err.message, payload: req.body })
+        });
+    } catch (error) {
+        return next(error);
+    }
+}

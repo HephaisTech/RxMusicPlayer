@@ -5,9 +5,9 @@ const Validator = require("mongoose-unique-validator");
 
 const SoundSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', },
-    VIDEO_ID: { type: String },
-    video_url: { type: String },
-    title: { type: String },
+    VIDEO_ID: { type: String, unique: true },
+    video_url: { type: String, require: true },
+    title: { type: String, require: true, unique: true },
     urlmx: { type: String },
     chapters: [],
     thumbnailUrl: { type: String },

@@ -5,10 +5,9 @@ const path = require('path');
 const sound = require('../model/sound');
 const { json } = require('body-parser');
 
-
+//free 
 exports.getVideoInfo = async (req, res, next) => {
     try {
-        // req.body.userId = req.user.id;
         await ytdl.getInfo(req.body.youtubeUrl).then(async (result) => {
             if (result) {
                 const formats = result.formats;
@@ -41,20 +40,19 @@ exports.getVideoInfo = async (req, res, next) => {
                     publishDate: publishDate,
                     related_videos: related_videos,
                 });
-                // const _newSound = await newSound.save()
                 return res.status(200).json(newSound);
             }
             else {
                 return res.status(403).json({ result: false, message: 'no detail found' });
             }
         }).catch((err) => {
-            return res.status(500).json({ result: false, message: 'unable to find', error: err.message });
+            return res.status(500).json({ result: false, message: 'unable to find', error: err.stack });
         });
     } catch (error) {
         next(error);
     }
 };
-
+// logged
 exports.downloadchapter = async (req, res, next) => {
     try {
         let chapter = req.body.chapter;
@@ -68,3 +66,43 @@ exports.downloadchapter = async (req, res, next) => {
         next(error);
     }
 };
+
+
+exports.savetoFavories = async (req, res, next) => {
+    try {
+        req.body.userId = req.user.id;
+        let newSound = new sound(req.body);
+        await newSound.save().then((result) => {
+            return result ? res.status(201).json(result) : res.status(400).json('failed')
+        }).catch((err) => {
+            return res.status(405).json({ result: false, message: err.message });
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+exports.getMyFav = async (req, res, next) => {
+    try {
+        await sound.find({ userId: req.user.id }).then((result) => {
+            return result ? res.status(200).json(result) : res.status(400).json('failed')
+        }).catch((err) => {
+            return res.status(405).json({ result: false, message: err.message });
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+exports.destroyFromFav = async (req, res, next) => {
+    try {
+        await sound.findByIdAndDelete(req.body.id).then((result) => {
+            return result ? res.status(200).json(result) : res.status(400).json('failed')
+        }).catch((err) => {
+            return res.status(500).json({ result: false, message: 'something went wrong', error: err.message });
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
