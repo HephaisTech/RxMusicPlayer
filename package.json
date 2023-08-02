@@ -5,7 +5,10 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js"
+    "start": "nodemon app.js",
+    "clean": "rm -rf node_modules",
+    "rebuild": "npm clean && npm install &&  npm build",
+    "serve": "node app.js"
   },
   "author": "ramius",
   "license": "ISC",
